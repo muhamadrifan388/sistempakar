@@ -1,0 +1,61 @@
+import numpy as np
+import skfuzzy as fuzz
+from skfuzzy import control as ctrl
+
+# Input variables
+blood_pressure = ctrl.Antecedent(np.arange(90, 181, 1), 'blood_pressure')
+hemoglobin = ctrl.Antecedent(np.arange(7, 17, 1), 'hemoglobin')
+pregnancy_age = ctrl.Antecedent(np.arange(0, 41, 1), 'pregnancy_age')
+
+# Output variable
+risk = ctrl.Consequent(np.arange(0, 101, 1), 'risk')
+
+# Membership functions for blood pressure
+blood_pressure['low'] = fuzz.trimf(blood_pressure.universe, [90, 100, 110])
+blood_pressure['normal'] = fuzz.trimf(blood_pressure.universe, [110, 120, 130])
+blood_pressure['high'] = fuzz.trimf(blood_pressure.universe, [130, 150, 180])
+
+# Membership functions for hemoglobin
+hemoglobin['low'] = fuzz.trimf(hemoglobin.universe, [7, 9, 11])
+hemoglobin['normal'] = fuzz.trimf(hemoglobin.universe, [11, 13, 15])
+hemoglobin['high'] = fuzz.trimf(hemoglobin.universe, [15, 16, 17])
+
+# Membership functions for pregnancy age
+pregnancy_age['early'] = fuzz.trimf(pregnancy_age.universe, [0, 10, 20])
+pregnancy_age['mid'] = fuzz.trimf(pregnancy_age.universe, [20, 25, 30])
+pregnancy_age['late'] = fuzz.trimf(pregnancy_age.universe, [30, 35, 40])
+
+# Membership functions for risk
+risk['low'] = fuzz.trimf(risk.universe, [0, 25, 50])
+risk['medium'] = fuzz.trimf(risk.universe, [50, 60, 70])
+risk['high'] = fuzz.trimf(risk.universe, [70, 85, 100])
+
+# Define fuzzy rules
+rule1 = ctrl.Rule(blood_pressure['low'] & hemoglobin['low'] & pregnancy_age['early'], risk['high'])
+rule2 = ctrl.Rule(blood_pressure['low'] & hemoglobin['normal'] & pregnancy_age['mid'], risk['medium'])
+rule3 = ctrl.Rule(blood_pressure['normal'] & hemoglobin['normal'] & pregnancy_age['mid'], risk['low'])
+rule4 = ctrl.Rule(blood_pressure['high'] & hemoglobin['high'] & pregnancy_age['late'], risk['high'])
+rule5 = ctrl.Rule(blood_pressure['high'] & hemoglobin['normal'] & pregnancy_age['early'], risk['medium'])
+rule6 = ctrl.Rule(blood_pressure['normal'] & hemoglobin['low'] & pregnancy_age['late'], risk['medium'])
+# Add more rules as necessary
+
+# Control system creation and simulation
+risk_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6])
+risk_simulation = ctrl.ControlSystemSimulation(risk_ctrl)
+
+# Example input
+risk_simulation.input['blood_pressure'] = 135
+risk_simulation.input['hemoglobin'] = 12
+risk_simulation.input['pregnancy_age'] = 28
+
+# Compute the result
+risk_simulation.compute()
+
+# Output result
+print(f"Tingkat risiko: {risk_simulation.output['risk']:.2f}")
+
+# Visualisasi
+blood_pressure.view()
+hemoglobin.view()
+pregnancy_age.view()
+risk.view(sim=risk_simulation)
